@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package nethttp
@@ -99,9 +100,12 @@ func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http
 func MiddlewareFunc(tr opentracing.Tracer, h http.HandlerFunc, options ...MWOption) http.HandlerFunc {
 	opts := mwOptions{
 		opNameFunc: func(r *http.Request) string {
-			return "HTTP " + r.Method
+			return "HttpServer Handle: " + r.URL.String()
 		},
-		spanFilter:   func(r *http.Request) bool { return true },
+		spanFilter: func(r *http.Request) bool {
+			_, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
+			return err == nil
+		},
 		spanObserver: func(span opentracing.Span, r *http.Request) {},
 		urlTagFunc: func(u *url.URL) string {
 			return u.String()
